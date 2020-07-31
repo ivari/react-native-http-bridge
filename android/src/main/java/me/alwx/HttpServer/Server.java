@@ -9,6 +9,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashMap;
@@ -72,6 +73,7 @@ public class Server extends NanoHTTPD {
         request.putString("url", session.getUri());
         request.putString("type", method.name());
         request.putString("requestId", requestId);
+        request.putMap("headersjava", toWritableMap(session.getHeaders()));
         
         Map<String, String> files = new HashMap<>();
         session.parseBody(files);
@@ -80,6 +82,36 @@ public class Server extends NanoHTTPD {
         }
 
         return request;
+    }
+
+    private WritableMap toWritableMap(Map<String, String> map) {
+        WritableMap writableMap = Arguments.createMap();
+        Iterator iterator = map.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> pair = (Map.Entry)iterator.next();
+            String value = pair.getValue();
+
+            if (value == null) {
+                writableMap.putNull((String) pair.getKey());
+            // } else if (value instanceof Boolean) {
+            //     writableMap.putBoolean((String) pair.getKey(), (Boolean) value);
+            // } else if (value instanceof Double) {
+            //     writableMap.putDouble((String) pair.getKey(), (Double) value);
+            // } else if (value instanceof Integer) {
+            //     writableMap.putInt((String) pair.getKey(), (Integer) value);
+            } else if (value instanceof String) {
+                writableMap.putString((String) pair.getKey(), (String) value);
+            // } else if (value instanceof Map) {
+            //     writableMap.putMap((String) pair.getKey(), MapUtil.toWritableMap((Map<String, Object>) value));
+            // } else if (value.getClass() != null && value.getClass().isArray()) {
+            //     writableMap.putArray((String) pair.getKey(), ArrayUtil.toWritableArray((Object[]) value));
+            }
+
+            iterator.remove();
+        }
+
+        return writableMap;
     }
 
     private void sendEvent(ReactContext reactContext, String eventName, @Nullable WritableMap params) {
